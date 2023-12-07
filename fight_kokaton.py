@@ -7,6 +7,7 @@ WIDTH = 1600  # ゲームウィンドウの幅
 HEIGHT = 900  # ゲームウィンドウの高さ
 MAIN_DIR = os.path.split(os.path.abspath(__file__))[0]
 NUM_OF_BOMBS = 5  # 爆弾の数
+scores = 0 #スコアを0
 
 
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
@@ -21,6 +22,8 @@ def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     if obj_rct.top < 0 or HEIGHT < obj_rct.bottom:
         tate = False
     return yoko, tate
+
+
 class Bird:
     """
     ゲームキャラクター（こうかとん）に関するクラス
@@ -31,6 +34,7 @@ class Bird:
         pg.K_LEFT: (-5, 0),
         pg.K_RIGHT: (+5, 0),
     }
+    
     def __init__(self, num: int, xy: tuple[int, int]):
         """
         こうかとん画像Surfaceを生成する
@@ -60,6 +64,7 @@ class Bird:
         self.img = self.imgs[(+5, 0)]  # 右向きこうかとんをデフォ画像にする
         self.rct = self.img.get_rect()
         self.rct.center = xy
+        
     def change_img(self, num: int, screen: pg.Surface):
         """
         こうかとん画像を切り替え，画面に転送する
@@ -68,6 +73,7 @@ class Bird:
         """
         self.img = pg.transform.rotozoom(pg.image.load(f"{MAIN_DIR}/fig/{num}.png"), 0, 2.0)
         screen.blit(self.img, self.rct)
+        
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
         押下キーに応じてこうかとんを移動させる
@@ -120,6 +126,8 @@ class Bomb:
             self.vy *= -1
         self.rct.move_ip(self.vx, self.vy)
         screen.blit(self.img, self.rct)
+        
+        
 class Beam:
     def __init__(self, bird: Bird):
         self.img = pg.image.load(f"{MAIN_DIR}/fig/beam.png")
@@ -134,7 +142,25 @@ class Beam:
         """
         self.rct.move_ip(self.vx, self.vy)
         screen.blit(self.img, self.rct)
+        
+        
+class Score:
+    def __init__(self):
+        global scores
+        self.font = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+        color=(0,0,255)
+        self.img = self.font.render(f"スコア：{scores}", 0, color)
+        self.rct = self.img.get_rect()
+        self.rct.center = 100,HEIGHT -50
+        
+    def update(self, screen: pg.Surface):
+        color=(0,0,255)
+        self.img = self.font.render(f"スコア：{scores}", 0, color)
+        screen.blit(self.img, self.rct)
+    
+        
 def main():
+    global scores
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
     bg_img = pg.image.load(f"{MAIN_DIR}/fig/pg_bg.jpg")
@@ -143,6 +169,7 @@ def main():
     bombs = [Bomb() for _ in range(NUM_OF_BOMBS)]  
     beam = None
     beams = []
+    score = Score()
 
     clock = pg.time.Clock()
     tmr = 0
@@ -170,6 +197,8 @@ def main():
                     beams[j] = None
                     bombs[i] = None
                     bird.change_img(6, screen)
+                    scores += 1
+                    score.update(screen)
         # Noneでない爆弾だけのリストを作る
         bombs = [bomb for bomb in bombs if bomb is not None]
         # Noneでないビームだけのリストを作る
@@ -180,6 +209,7 @@ def main():
             bomb.update(screen)
         for beam in beams:
             beam.update(screen)
+        score.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
